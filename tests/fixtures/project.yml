@@ -1,0 +1,33 @@
+name: test-app
+options:
+  bundleIdPrefix: com.example
+  deploymentTarget:
+    iOS: "14.0"
+fileGroups: [../../src]
+configs:
+  debug: debug
+  release: release
+settingGroups:
+  app:
+    base:
+      PRODUCT_NAME: test-app
+      PRODUCT_BUNDLE_IDENTIFIER: com.example.testapp
+targets:
+  test-app_iOS:
+    type: application
+    platform: iOS
+    deploymentTarget: "14.0"
+    sources:
+      - path: test-app_iOS
+    info:
+      path: test-app_iOS/Info.plist
+    scheme:
+      environmentVariables:
+        RUST_BACKTRACE: full
+        RUST_LOG: info
+    settings:
+      base:
+        ENABLE_BITCODE: false
+        ARCHS: [arm64]
+      groups: [app]
+    dependencies: []
