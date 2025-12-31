@@ -6,7 +6,7 @@ const program = new Command();
 program
   .name("tauri-apple-extensions")
   .description("Add iOS extensions to Tauri apps")
-  .version("0.1.1");
+  .version("0.1.2");
 
 program
   .command("add <type>")

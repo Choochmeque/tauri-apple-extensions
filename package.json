@@ -1,6 +1,6 @@
 {
   "name": "@choochmeque/tauri-apple-extensions",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Add iOS extensions to Tauri apps with a single command",
   "type": "module",
   "main": "./dist/index.js",
