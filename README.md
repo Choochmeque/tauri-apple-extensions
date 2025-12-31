@@ -8,9 +8,9 @@ Add iOS extensions to Tauri apps with a single command.
 ## Features
 
 - Automatic Xcode project configuration via XcodeGen
-- Plugin-based template system
+- Built-in skeleton templates with TODO markers
+- Plugin-based template system for custom implementations
 - Idempotent - safe to re-run
-- Share Extension support (more extension types coming soon)
 
 ## Prerequisites
 
@@ -20,34 +20,57 @@ Add iOS extensions to Tauri apps with a single command.
 ## Installation
 
 ```bash
+# npm
 npm install -D @choochmeque/tauri-apple-extensions
+
+# pnpm
+pnpm add -D @choochmeque/tauri-apple-extensions
+
+# yarn
+yarn add -D @choochmeque/tauri-apple-extensions
+
+# bun
+bun add -D @choochmeque/tauri-apple-extensions
 ```
 
 ## Usage
 
-### With a plugin (recommended)
-
-If you're using a Tauri plugin that provides iOS extension templates:
-
 ```bash
-npx @choochmeque/tauri-apple-extensions add share --plugin @choochmeque/tauri-plugin-sharekit-api
+npx @choochmeque/tauri-apple-extensions add share
 ```
 
-### With custom templates
+This creates a Share Extension with a minimal skeleton template. Open the generated Swift file and implement your logic where you see `// TODO:` comments.
+
+### Options
 
 ```bash
+# Use templates from a plugin (plugin must include tauri-apple-extension config)
+npx @choochmeque/tauri-apple-extensions add share --plugin <plugin-name>
+
+# Use custom templates directory
 npx @choochmeque/tauri-apple-extensions add share --templates ./path/to/templates
 ```
 
+> **Note:** When using `--plugin`, the plugin's `package.json` must contain a `tauri-apple-extension` config. See [For Plugin Developers](#for-plugin-developers) below.
+
 ## Supported Extensions
 
-| Type | Status | Description |
-|------|--------|-------------|
-| `share` | Available | Share Extension for receiving shared content |
+| Type | Description |
+|------|-------------|
+| `share` | Share Extension for receiving shared content |
+
+## Post-Setup Steps
+
+After running the tool:
+
+1. Open the Xcode project (`src-tauri/gen/apple/*.xcodeproj`)
+2. Select your Apple Developer Team for both targets
+3. Enable **App Groups** capability for both targets
+4. Configure App Groups in [Apple Developer Portal](https://developer.apple.com/account/resources/identifiers/list/applicationGroup)
 
 ## For Plugin Developers
 
-To make your plugin compatible with this tool, add the following to your `package.json`:
+To make your plugin compatible, add to your `package.json`:
 
 ```json
 {
@@ -57,10 +80,6 @@ To make your plugin compatible with this tool, add the following to your `packag
   }
 }
 ```
-
-Your templates directory should contain:
-- Swift source files with `{{VARIABLE}}` placeholders
-- `Info.plist` for the extension
 
 ### Template Variables
 
@@ -72,19 +91,10 @@ Your templates directory should contain:
 | `{{BUNDLE_IDENTIFIER}}` | Extension bundle identifier |
 | `{{PRODUCT_NAME}}` | App product name |
 
-## Post-Setup Steps
-
-After running the tool:
-
-1. Open the Xcode project (`src-tauri/gen/apple/*.xcodeproj`)
-2. Select your Apple Developer Team for both targets
-3. Enable required capabilities (e.g., App Groups) for both targets
-4. Configure the capability in Apple Developer Portal
-
 ## Contributing
 
-PRs accepted. Please make sure to read the Contributing Guide before making a pull request.
+PRs welcome! Please open an issue first to discuss what you would like to change.
 
 ## License
 
-MIT
+[MIT](LICENSE)
