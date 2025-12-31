@@ -1,6 +1,6 @@
 import tseslint from "typescript-eslint";
 
-export default tseslint.config(
+export default [
   ...tseslint.configs.recommended,
   {
     languageOptions: {
@@ -15,13 +15,10 @@ export default tseslint.config(
       },
     },
     rules: {
-      "@typescript-eslint/no-unused-vars": [
-        "error",
-        { argsIgnorePattern: "^_" },
-      ],
+      "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
     },
   },
   {
     ignores: ["dist/", "node_modules/", "coverage/"],
   },
-);
+];
