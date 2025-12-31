@@ -2,6 +2,54 @@ import fs from "fs";
 import path from "path";
 import type { AppInfo } from "../types.js";
 
+export const EMPTY_ENTITLEMENTS = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+</dict>
+</plist>`;
+
+export function addAppGroupToEntitlements(
+  entitlements: string,
+  appGroupId: string,
+): string {
+  // Check if app groups already configured
+  if (entitlements.includes("com.apple.security.application-groups")) {
+    if (!entitlements.includes(appGroupId)) {
+      // Add our group to existing array
+      return entitlements.replace(
+        /(<key>com\.apple\.security\.application-groups<\/key>\s*<array>)/,
+        `$1\n        <string>${appGroupId}</string>`,
+      );
+    }
+    return entitlements;
+  }
+
+  // Add app groups entitlement
+  return entitlements.replace(
+    /<dict>\s*<\/dict>/,
+    `<dict>
+    <key>com.apple.security.application-groups</key>
+    <array>
+        <string>${appGroupId}</string>
+    </array>
+</dict>`,
+  );
+}
+
+export function createEntitlementsContent(appGroupId: string): string {
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>com.apple.security.application-groups</key>
+    <array>
+        <string>${appGroupId}</string>
+    </array>
+</dict>
+</plist>`;
+}
+
 export function updateMainAppEntitlements(
   appleDir: string,
   appInfo: AppInfo,
@@ -18,35 +66,10 @@ export function updateMainAppEntitlements(
   if (fs.existsSync(entitlementsPath)) {
     entitlements = fs.readFileSync(entitlementsPath, "utf8");
   } else {
-    entitlements = `<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-</dict>
-</plist>`;
+    entitlements = EMPTY_ENTITLEMENTS;
   }
 
-  // Check if app groups already configured
-  if (entitlements.includes("com.apple.security.application-groups")) {
-    if (!entitlements.includes(appGroupId)) {
-      // Add our group to existing array
-      entitlements = entitlements.replace(
-        /(<key>com\.apple\.security\.application-groups<\/key>\s*<array>)/,
-        `$1\n        <string>${appGroupId}</string>`,
-      );
-    }
-  } else {
-    // Add app groups entitlement
-    entitlements = entitlements.replace(
-      /<dict>\s*<\/dict>/,
-      `<dict>
-    <key>com.apple.security.application-groups</key>
-    <array>
-        <string>${appGroupId}</string>
-    </array>
-</dict>`,
-    );
-  }
+  entitlements = addAppGroupToEntitlements(entitlements, appGroupId);
 
   fs.writeFileSync(entitlementsPath, entitlements);
   console.log(`Updated main app entitlements: ${entitlementsPath}`);
@@ -56,17 +79,7 @@ export function createExtensionEntitlements(
   extensionDir: string,
   appGroupId: string,
 ): string {
-  const entitlements = `<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>com.apple.security.application-groups</key>
-    <array>
-        <string>${appGroupId}</string>
-    </array>
-</dict>
-</plist>`;
-
+  const entitlements = createEntitlementsContent(appGroupId);
   const entitlementsPath = path.join(
     extensionDir,
     `${path.basename(extensionDir)}.entitlements`,
