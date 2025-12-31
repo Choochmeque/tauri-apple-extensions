@@ -36,7 +36,10 @@
     "buildscript",
     "Inspectable",
     "inspectable",
-    "AUMID"
+    "AUMID",
+    "xcodegen",
+    "sharekit",
+    "xcodeproj"
   ],
   "useGitignore": true,
   "ignorePaths": [

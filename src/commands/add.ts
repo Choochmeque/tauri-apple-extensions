@@ -62,11 +62,7 @@ function resolveTemplatesDir(
   }
 
   // Option 3: Default templates (from bundled dist/cli.js -> ../templates)
-  const defaultTemplates = path.join(
-    __dirname,
-    "../templates",
-    extensionType,
-  );
+  const defaultTemplates = path.join(__dirname, "../templates", extensionType);
   if (!fs.existsSync(defaultTemplates)) {
     throw new Error(
       `No templates found. Use --plugin or --templates to specify templates.`,
