@@ -1,246 +1,126 @@
 import UIKit
 import Social
-import MobileCoreServices
 import UniformTypeIdentifiers
 
 class ShareViewController: UIViewController {
 
-    // MARK: - Configuration (will be replaced by setup script)
+    // MARK: - Configuration
     private let appGroupIdentifier = "{{APP_GROUP_IDENTIFIER}}"
     private let appURLScheme = "{{APP_URL_SCHEME}}"
 
+    // MARK: - Lifecycle
+
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = .clear
+        // TODO: Setup your UI here
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        handleSharedContent()
+        processSharedItems()
     }
 
-    private func handleSharedContent() {
-        // Check App Groups configuration early
-        if FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupIdentifier) == nil {
-            showError("App Groups not configured.\n\nPlease enable 'App Groups' capability in Xcode for both the main app and ShareExtension targets, and configure '\(appGroupIdentifier)' in Apple Developer Portal.")
-            return
-        }
+    // MARK: - Share Processing
 
+    private func processSharedItems() {
         guard let extensionItems = extensionContext?.inputItems as? [NSExtensionItem] else {
-            completeRequest()
+            complete()
             return
         }
 
-        // Use a serial queue to safely collect results
-        let resultQueue = DispatchQueue(label: "sharekit.results")
-        var sharedContent: [String: Any] = [:]
-        var files: [[String: Any]] = []
-        var textContent: String? = nil
-
-        let group = DispatchGroup()
-
-        for extensionItem in extensionItems {
-            guard let attachments = extensionItem.attachments else { continue }
+        for item in extensionItems {
+            guard let attachments = item.attachments else { continue }
 
             for attachment in attachments {
-                group.enter()
+                // TODO: Handle different content types
+                // Examples:
+                //   - UTType.image.identifier for images
+                //   - UTType.url.identifier for URLs
+                //   - UTType.text.identifier for text
+                //   - UTType.fileURL.identifier for files
+
+                if attachment.hasItemConformingToTypeIdentifier(UTType.url.identifier) {
+                    attachment.loadItem(forTypeIdentifier: UTType.url.identifier) { [weak self] item, error in
+                        if let url = item as? URL {
+                            // TODO: Process the URL
+                            print("Received URL: \(url)")
+                        }
+                        DispatchQueue.main.async {
+                            self?.complete()
+                        }
+                    }
+                    return
+                }
+
+                if attachment.hasItemConformingToTypeIdentifier(UTType.text.identifier) {
+                    attachment.loadItem(forTypeIdentifier: UTType.text.identifier) { [weak self] item, error in
+                        if let text = item as? String {
+                            // TODO: Process the text
+                            print("Received text: \(text)")
+                        }
+                        DispatchQueue.main.async {
+                            self?.complete()
+                        }
+                    }
+                    return
+                }
 
                 if attachment.hasItemConformingToTypeIdentifier(UTType.image.identifier) {
-                    // Check image FIRST (before URL) because images can also be URLs
-                    attachment.loadItem(forTypeIdentifier: UTType.image.identifier, options: nil) { [weak self] item, error in
-                        defer { group.leave() }
+                    attachment.loadItem(forTypeIdentifier: UTType.image.identifier) { [weak self] item, error in
                         if let url = item as? URL {
-                            if let fileInfo = self?.copyFileToAppGroup(url: url) {
-                                resultQueue.sync { files.append(fileInfo) }
-                            }
+                            // TODO: Process image file URL
+                            print("Received image: \(url)")
                         } else if let image = item as? UIImage {
-                            if let fileInfo = self?.saveImageToAppGroup(image: image) {
-                                resultQueue.sync { files.append(fileInfo) }
-                            }
+                            // TODO: Process UIImage directly
+                            print("Received UIImage")
+                        }
+                        DispatchQueue.main.async {
+                            self?.complete()
                         }
                     }
-                } else if attachment.hasItemConformingToTypeIdentifier(UTType.url.identifier) {
-                    attachment.loadItem(forTypeIdentifier: UTType.url.identifier, options: nil) { [weak self] item, error in
-                        defer { group.leave() }
-                        guard let url = item as? URL else { return }
-
-                        if url.isFileURL {
-                            if let fileInfo = self?.copyFileToAppGroup(url: url) {
-                                resultQueue.sync { files.append(fileInfo) }
-                            }
-                        } else {
-                            resultQueue.sync { textContent = url.absoluteString }
-                        }
-                    }
-                } else if attachment.hasItemConformingToTypeIdentifier(UTType.text.identifier) {
-                    attachment.loadItem(forTypeIdentifier: UTType.text.identifier, options: nil) { item, error in
-                        defer { group.leave() }
-                        if let text = item as? String {
-                            resultQueue.sync { textContent = text }
-                        }
-                    }
-                } else if attachment.hasItemConformingToTypeIdentifier(UTType.data.identifier) {
-                    attachment.loadItem(forTypeIdentifier: UTType.data.identifier, options: nil) { [weak self] item, error in
-                        defer { group.leave() }
-                        if let url = item as? URL {
-                            if let fileInfo = self?.copyFileToAppGroup(url: url) {
-                                resultQueue.sync { files.append(fileInfo) }
-                            }
-                        }
-                    }
-                } else {
-                    group.leave()
+                    return
                 }
             }
         }
 
-        group.notify(queue: .main) { [weak self] in
-            guard let self = self else { return }
-
-            if !files.isEmpty {
-                sharedContent["type"] = "files"
-                sharedContent["files"] = files
-            } else if let text = textContent {
-                sharedContent["type"] = "text"
-                sharedContent["text"] = text
-            }
-
-            if !sharedContent.isEmpty {
-                _ = self.saveToAppGroup(content: sharedContent)
-                self.openMainAppAndComplete()
-            } else {
-                self.completeRequest()
-            }
-        }
+        complete()
     }
 
-    private func showError(_ message: String) {
-        let alert = UIAlertController(
-            title: "ShareKit Error",
-            message: message,
-            preferredStyle: .alert
-        )
-        alert.addAction(UIAlertAction(title: "OK", style: .default) { [weak self] _ in
-            self?.completeRequest()
-        })
-        present(alert, animated: true)
-    }
+    // MARK: - App Group Storage (Optional)
 
-    private func copyFileToAppGroup(url: URL) -> [String: Any]? {
-        guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupIdentifier) else {
-            return nil
-        }
-
-        let sharedFilesDir = containerURL.appendingPathComponent("shared_files", isDirectory: true)
-        try? FileManager.default.createDirectory(at: sharedFilesDir, withIntermediateDirectories: true)
-
-        let fileName = url.lastPathComponent
-        let destinationURL = sharedFilesDir.appendingPathComponent(UUID().uuidString + "_" + fileName)
-
-        do {
-            if url.startAccessingSecurityScopedResource() {
-                defer { url.stopAccessingSecurityScopedResource() }
-                try FileManager.default.copyItem(at: url, to: destinationURL)
-            } else {
-                try FileManager.default.copyItem(at: url, to: destinationURL)
-            }
-
-            var fileInfo: [String: Any] = [
-                "path": destinationURL.path,
-                "name": fileName
-            ]
-
-            if let mimeType = getMimeType(for: url) {
-                fileInfo["mimeType"] = mimeType
-            }
-
-            if let attributes = try? FileManager.default.attributesOfItem(atPath: destinationURL.path),
-               let size = attributes[.size] as? Int64 {
-                fileInfo["size"] = size
-            }
-
-            return fileInfo
-        } catch {
-            print("ShareKit: Failed to copy file: \(error)")
-            return nil
-        }
-    }
-
-    private func saveImageToAppGroup(image: UIImage) -> [String: Any]? {
-        guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupIdentifier) else {
-            return nil
-        }
-
-        let sharedFilesDir = containerURL.appendingPathComponent("shared_files", isDirectory: true)
-        try? FileManager.default.createDirectory(at: sharedFilesDir, withIntermediateDirectories: true)
-
-        let fileName = UUID().uuidString + ".png"
-        let destinationURL = sharedFilesDir.appendingPathComponent(fileName)
-
-        guard let data = image.pngData() else { return nil }
-
-        do {
-            try data.write(to: destinationURL)
-
-            return [
-                "path": destinationURL.path,
-                "name": fileName,
-                "mimeType": "image/png",
-                "size": data.count
-            ]
-        } catch {
-            print("ShareKit: Failed to save image: \(error)")
-            return nil
-        }
-    }
-
-    private func getMimeType(for url: URL) -> String? {
-        if let uti = UTType(filenameExtension: url.pathExtension) {
-            return uti.preferredMIMEType
-        }
-        return nil
-    }
-
-    private func saveToAppGroup(content: [String: Any]) -> Bool {
+    /// Save data to App Group for main app to read
+    private func saveToAppGroup(_ data: Data, forKey key: String) -> Bool {
         guard let userDefaults = UserDefaults(suiteName: appGroupIdentifier) else {
-            showError("App Groups not configured.\n\nPlease enable 'App Groups' capability in Xcode for both the main app and ShareExtension targets, and configure '\(appGroupIdentifier)' in Apple Developer Portal.")
+            print("App Groups not configured")
             return false
         }
-
-        do {
-            let data = try JSONSerialization.data(withJSONObject: content)
-            userDefaults.set(data, forKey: "pendingSharedContent")
-            userDefaults.synchronize()
-            return true
-        } catch {
-            showError("Failed to save shared content: \(error.localizedDescription)")
-            return false
-        }
+        userDefaults.set(data, forKey: key)
+        return true
     }
 
-    private func openMainAppAndComplete() {
-        guard let url = URL(string: "\(appURLScheme)://sharekit-content") else {
-            completeRequest()
-            return
-        }
+    /// Get App Group container URL for file storage
+    private func appGroupContainerURL() -> URL? {
+        FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupIdentifier)
+    }
+
+    // MARK: - Open Main App (Optional)
+
+    private func openMainApp() {
+        guard let url = URL(string: "\(appURLScheme)://share") else { return }
 
         var responder: UIResponder? = self
-        while responder != nil {
-            if let application = responder as? UIApplication {
-                if #available(iOS 18.0, *) {
-                    application.open(url, options: [:], completionHandler: nil)
-                } else {
-                    _ = application.perform(NSSelectorFromString("openURL:"), with: url)
-                }
+        while let r = responder {
+            if let application = r as? UIApplication {
+                application.open(url, options: [:], completionHandler: nil)
                 break
             }
-            responder = responder?.next
+            responder = r.next
         }
-
-        completeRequest()
     }
 
-    private func completeRequest() {
+    // MARK: - Complete
+
+    private func complete() {
         extensionContext?.completeRequest(returningItems: [], completionHandler: nil)
     }
 }
