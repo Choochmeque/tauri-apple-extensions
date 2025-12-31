@@ -3,6 +3,7 @@ import path from "path";
 import {
   addExtensionTarget,
   addDependencyToTarget,
+  addUrlSchemeToTarget,
 } from "../core/project-yml.js";
 import { createExtensionEntitlements } from "../core/entitlements.js";
 import { copyTemplateFile } from "../utils/template.js";
@@ -172,6 +173,17 @@ export const shareExtension: Extension = {
     modified = addDependencyToTarget(modified, targetName, {
       target: extensionName,
     });
+
+    // Add URL scheme to main app for deep linking from extension
+    const urlScheme = appInfo.productName
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "");
+    modified = addUrlSchemeToTarget(
+      modified,
+      targetName,
+      urlScheme,
+      appInfo.identifier,
+    );
 
     return modified;
   },

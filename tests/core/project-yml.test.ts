@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   addExtensionTarget,
   addDependencyToTarget,
+  addUrlSchemeToTarget,
 } from "../../src/core/project-yml.js";
 
 describe("project-yml", () => {
@@ -80,6 +81,54 @@ targets:
       });
 
       const matches = result.match(/target: MyApp-ShareExtension/g);
+      expect(matches?.length).toBe(1);
+    });
+  });
+
+  describe("addUrlSchemeToTarget", () => {
+    it("adds URL scheme to target info properties", () => {
+      const projectYml = `targets:
+  MyApp_iOS:
+    type: application
+    info:
+      path: MyApp_iOS/Info.plist
+      properties:
+        CFBundleDisplayName: MyApp`;
+
+      const result = addUrlSchemeToTarget(
+        projectYml,
+        "MyApp_iOS",
+        "myapp",
+        "com.example.myapp",
+      );
+
+      expect(result).toContain("CFBundleURLTypes:");
+      expect(result).toContain("CFBundleURLName: com.example.myapp");
+      expect(result).toContain("CFBundleURLSchemes:");
+      expect(result).toContain("- myapp");
+    });
+
+    it("does not duplicate existing URL scheme", () => {
+      const projectYml = `targets:
+  MyApp_iOS:
+    type: application
+    info:
+      path: MyApp_iOS/Info.plist
+      properties:
+        CFBundleDisplayName: MyApp
+        CFBundleURLTypes:
+          - CFBundleURLName: com.example.myapp
+            CFBundleURLSchemes:
+              - myapp`;
+
+      const result = addUrlSchemeToTarget(
+        projectYml,
+        "MyApp_iOS",
+        "myapp",
+        "com.example.myapp",
+      );
+
+      const matches = result.match(/CFBundleURLSchemes:/g);
       expect(matches?.length).toBe(1);
     });
   });

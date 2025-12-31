@@ -9,7 +9,6 @@ import {
 } from "../core/project-discovery.js";
 import { readProjectYml, writeProjectYml } from "../core/project-yml.js";
 import { updateMainAppEntitlements } from "../core/entitlements.js";
-import { addUrlSchemeToInfoPlist } from "../core/info-plist.js";
 import { runXcodeGen } from "../core/xcodegen.js";
 import { shareExtension } from "../extensions/share.js";
 import type { Extension, AddOptions } from "../types.js";
@@ -141,15 +140,12 @@ export async function addExtension(
     console.log(`\n2. Updating main app entitlements...`);
     updateMainAppEntitlements(appleDir, appInfo);
 
-    console.log(`\n3. Adding URL scheme to Info.plist...`);
-    addUrlSchemeToInfoPlist(appleDir, appInfo);
-
-    console.log(`\n4. Updating project.yml...`);
+    console.log(`\n3. Updating project.yml (extension target + URL scheme)...`);
     projectYml = readProjectYml(appleDir);
     projectYml = extension.updateProjectYml(projectYml, appInfo);
     writeProjectYml(appleDir, projectYml);
 
-    console.log(`\n5. Regenerating Xcode project...`);
+    console.log(`\n4. Regenerating Xcode project...`);
     runXcodeGen(appleDir);
 
     console.log(`\n========================================`);

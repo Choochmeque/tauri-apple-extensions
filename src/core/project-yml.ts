@@ -66,6 +66,39 @@ export function addExtensionTarget(
   return modified;
 }
 
+export function addUrlSchemeToTarget(
+  projectYml: string,
+  targetName: string,
+  urlScheme: string,
+  bundleIdentifier: string,
+): string {
+  let modified = projectYml;
+
+  // Check if URL scheme already exists
+  if (modified.includes(`CFBundleURLSchemes`) && modified.includes(urlScheme)) {
+    return modified;
+  }
+
+  // Find the target's info section and add URL scheme
+  const targetRegex = new RegExp(
+    `(${targetName}:[\\s\\S]*?info:[\\s\\S]*?properties:)([\\s\\S]*?)(\\n    \\w|\\n  \\w|$)`,
+    "m",
+  );
+
+  const match = modified.match(targetRegex);
+  if (match) {
+    const urlSchemeYaml = `
+        CFBundleURLTypes:
+          - CFBundleURLName: ${bundleIdentifier}
+            CFBundleURLSchemes:
+              - ${urlScheme}`;
+
+    modified = modified.replace(targetRegex, `$1$2${urlSchemeYaml}$3`);
+  }
+
+  return modified;
+}
+
 export function addDependencyToTarget(
   projectYml: string,
   mainTargetName: string,

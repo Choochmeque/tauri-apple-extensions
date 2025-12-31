@@ -6,7 +6,11 @@ export {
   findAppleProjectDir,
   getAppInfo,
 } from "./core/project-discovery.js";
-export { readProjectYml, writeProjectYml } from "./core/project-yml.js";
+export {
+  readProjectYml,
+  writeProjectYml,
+  addUrlSchemeToTarget,
+} from "./core/project-yml.js";
 export {
   updateMainAppEntitlements,
   createExtensionEntitlements,
