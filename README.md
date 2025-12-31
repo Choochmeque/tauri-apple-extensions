@@ -1,4 +1,4 @@
-# @choochmeque/tauri-apple-extensions
+# tauri-apple-extensions
 
 [![npm](https://img.shields.io/npm/v/@choochmeque/tauri-apple-extensions.svg)](https://www.npmjs.com/package/@choochmeque/tauri-apple-extensions)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
