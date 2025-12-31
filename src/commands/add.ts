@@ -61,10 +61,10 @@ function resolveTemplatesDir(
     return templatesPath;
   }
 
-  // Option 3: Default templates
+  // Option 3: Default templates (from bundled dist/cli.js -> ../templates)
   const defaultTemplates = path.join(
     __dirname,
-    "../../templates",
+    "../templates",
     extensionType,
   );
   if (!fs.existsSync(defaultTemplates)) {
