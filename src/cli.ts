@@ -1,3 +1,4 @@
+declare const __VERSION__: string;
 import { Command } from "commander";
 import { addExtension } from "./commands/add.js";
 
@@ -6,7 +7,7 @@ const program = new Command();
 program
   .name("tauri-apple-extensions")
   .description("Add iOS extensions to Tauri apps")
-  .version("0.1.2");
+  .version(__VERSION__);
 
 program
   .command("add <type>")
