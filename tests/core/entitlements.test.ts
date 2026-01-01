@@ -70,20 +70,42 @@ describe("entitlements", () => {
   });
 
   describe("createEntitlementsContent", () => {
-    it("creates valid entitlements plist with app group", () => {
-      const result = createEntitlementsContent("group.com.example.app");
+    it("creates valid entitlements plist with app group for iOS", () => {
+      const result = createEntitlementsContent("ios", "group.com.example.app");
 
       expect(result).toContain('<?xml version="1.0"');
       expect(result).toContain("com.apple.security.application-groups");
       expect(result).toContain("group.com.example.app");
       expect(result).toContain("</plist>");
+      expect(result).not.toContain("com.apple.security.app-sandbox");
+    });
+
+    it("adds sandbox for macOS", () => {
+      const result = createEntitlementsContent(
+        "macos",
+        "group.com.example.app",
+      );
+
+      expect(result).toContain("com.apple.security.app-sandbox");
+      expect(result).toContain("com.apple.security.application-groups");
+      expect(result).toContain("group.com.example.app");
     });
 
     it("uses the provided app group identifier", () => {
-      const result = createEntitlementsContent("group.custom.identifier");
+      const result = createEntitlementsContent(
+        "ios",
+        "group.custom.identifier",
+      );
 
       expect(result).toContain("group.custom.identifier");
       expect(result).not.toContain("group.com.example.app");
+    });
+
+    it("works without app group", () => {
+      const result = createEntitlementsContent("macos");
+
+      expect(result).toContain("com.apple.security.app-sandbox");
+      expect(result).not.toContain("com.apple.security.application-groups");
     });
   });
 
@@ -178,18 +200,34 @@ describe("entitlements", () => {
   });
 
   describe("createExtensionEntitlements", () => {
-    it("creates entitlements file with correct path", () => {
+    it("creates entitlements file with correct path for iOS", () => {
       const mockWriteFileSync = vi.mocked(fs.writeFileSync);
 
       const result = createExtensionEntitlements(
         "/apple/ShareExtension",
         "group.com.example.app",
+        "ios",
       );
 
       expect(result).toBe("/apple/ShareExtension/ShareExtension.entitlements");
       expect(mockWriteFileSync).toHaveBeenCalledWith(
         "/apple/ShareExtension/ShareExtension.entitlements",
         expect.stringContaining("group.com.example.app"),
+      );
+    });
+
+    it("adds sandbox for macOS", () => {
+      const mockWriteFileSync = vi.mocked(fs.writeFileSync);
+
+      createExtensionEntitlements(
+        "/apple/ShareExtension",
+        "group.com.example.app",
+        "macos",
+      );
+
+      expect(mockWriteFileSync).toHaveBeenCalledWith(
+        "/apple/ShareExtension/ShareExtension.entitlements",
+        expect.stringContaining("com.apple.security.app-sandbox"),
       );
     });
   });

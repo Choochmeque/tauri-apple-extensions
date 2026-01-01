@@ -23,7 +23,7 @@ export const shareExtension: Extension = {
     appleDir: string,
     appInfo: AppInfo,
     templatesDir: string,
-    _platform: Platform,
+    platform: Platform,
   ): void {
     const extensionDir = path.join(appleDir, "ShareExtension");
     const appGroupId = `group.${appInfo.identifier}`;
@@ -127,7 +127,7 @@ export const shareExtension: Extension = {
     }
 
     // Create entitlements
-    createExtensionEntitlements(extensionDir, appGroupId);
+    createExtensionEntitlements(extensionDir, appGroupId, platform);
 
     console.log(`Created ShareExtension files in ${extensionDir}`);
   },

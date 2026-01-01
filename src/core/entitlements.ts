@@ -37,15 +37,31 @@ export function addAppGroupToEntitlements(
   );
 }
 
-export function createEntitlementsContent(appGroupId: string): string {
+export function createEntitlementsContent(
+  platform: Platform,
+  appGroupId?: string,
+): string {
+  const entries: string[] = [];
+
+  // macOS extensions require app-sandbox to be registered
+  if (platform === "macos") {
+    entries.push(`    <key>com.apple.security.app-sandbox</key>
+    <true/>`);
+  }
+
+  // App groups only if needed
+  if (appGroupId) {
+    entries.push(`    <key>com.apple.security.application-groups</key>
+    <array>
+        <string>${appGroupId}</string>
+    </array>`);
+  }
+
   return `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>com.apple.security.application-groups</key>
-    <array>
-        <string>${appGroupId}</string>
-    </array>
+${entries.join("\n")}
 </dict>
 </plist>`;
 }
@@ -80,8 +96,9 @@ export function updateMainAppEntitlements(
 export function createExtensionEntitlements(
   extensionDir: string,
   appGroupId: string,
+  platform: Platform,
 ): string {
-  const entitlements = createEntitlementsContent(appGroupId);
+  const entitlements = createEntitlementsContent(platform, appGroupId);
   const entitlementsPath = path.join(
     extensionDir,
     `${path.basename(extensionDir)}.entitlements`,

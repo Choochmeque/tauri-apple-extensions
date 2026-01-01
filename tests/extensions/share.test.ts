@@ -234,6 +234,7 @@ targets:
       expect(mockCreateExtensionEntitlements).toHaveBeenCalledWith(
         "/apple/ShareExtension",
         "group.com.example.testapp",
+        "ios",
       );
     });
 
@@ -352,6 +353,7 @@ targets:
       expect(mockCreateExtensionEntitlements).toHaveBeenCalledWith(
         "/apple/ShareExtension",
         "group.com.example.testapp",
+        "ios",
       );
     });
 
