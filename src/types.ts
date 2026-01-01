@@ -1,3 +1,5 @@
+export type Platform = "ios" | "macos";
+
 export interface AppInfo {
   productName: string;
   bundleIdPrefix: string;
@@ -20,8 +22,17 @@ export interface Extension {
   extensionSuffix: string;
   extensionPointIdentifier: string;
   extensionName(appInfo: AppInfo): string;
-  createFiles(appleDir: string, appInfo: AppInfo, templatesDir: string): void;
-  updateProjectYml(projectYml: string, appInfo: AppInfo): string;
+  createFiles(
+    appleDir: string,
+    appInfo: AppInfo,
+    templatesDir: string,
+    platform: Platform,
+  ): void;
+  updateProjectYml(
+    projectYml: string,
+    appInfo: AppInfo,
+    platform: Platform,
+  ): string;
 }
 
 export interface TargetConfig {
@@ -36,6 +47,7 @@ export interface DependencyConfig {
 export interface AddOptions {
   plugin?: string;
   templates?: string;
+  platform: Platform;
 }
 
 export type TemplateVariables = Record<string, string>;

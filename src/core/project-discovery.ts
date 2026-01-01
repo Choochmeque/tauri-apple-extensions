@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { parseYamlSimple } from "../utils/yaml-simple.js";
-import type { AppInfo, TauriConfig } from "../types.js";
+import type { AppInfo, TauriConfig, Platform } from "../types.js";
 
 export function findProjectRoot(): string {
   let dir = process.cwd();
@@ -31,10 +31,20 @@ export function findTauriConfig(projectRoot: string): TauriConfig {
   throw new Error("Could not find tauri.conf.json");
 }
 
-export function findAppleProjectDir(projectRoot: string): string {
+export function findAppleProjectDir(
+  projectRoot: string,
+  platform: Platform,
+): string {
+  // iOS uses 'apple', macOS uses 'apple-macos'
+  const dirName = platform === "ios" ? "apple" : "apple-macos";
+  const initHint =
+    platform === "ios"
+      ? "Run 'tauri ios init' first."
+      : "Set up macOS Xcode project using @choochmeque/tauri-macos-xcode first.";
+
   const paths = [
-    path.join(projectRoot, "src-tauri", "gen", "apple"),
-    path.join(projectRoot, "gen", "apple"),
+    path.join(projectRoot, "src-tauri", "gen", dirName),
+    path.join(projectRoot, "gen", dirName),
   ];
 
   for (const p of paths) {
@@ -42,9 +52,7 @@ export function findAppleProjectDir(projectRoot: string): string {
       return p;
     }
   }
-  throw new Error(
-    "Could not find iOS project directory. Run 'tauri ios init' first.",
-  );
+  throw new Error(`Could not find ${platform} project directory. ${initHint}`);
 }
 
 export function getAppInfo(

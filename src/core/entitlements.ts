@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import type { AppInfo } from "../types.js";
+import type { AppInfo, Platform } from "../types.js";
 
 export const EMPTY_ENTITLEMENTS = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -53,8 +53,10 @@ export function createEntitlementsContent(appGroupId: string): string {
 export function updateMainAppEntitlements(
   appleDir: string,
   appInfo: AppInfo,
+  platform: Platform,
 ): void {
-  const targetName = `${appInfo.productName}_iOS`;
+  const platformSuffix = platform === "ios" ? "iOS" : "macOS";
+  const targetName = `${appInfo.productName}_${platformSuffix}`;
   const entitlementsPath = path.join(
     appleDir,
     targetName,

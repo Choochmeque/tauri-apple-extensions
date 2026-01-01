@@ -101,21 +101,48 @@ describe("entitlements", () => {
   });
 
   describe("updateMainAppEntitlements", () => {
-    it("creates new entitlements file if not exists", () => {
+    it("creates new entitlements file if not exists (iOS)", () => {
       const mockExistsSync = vi.mocked(fs.existsSync);
       const mockWriteFileSync = vi.mocked(fs.writeFileSync);
 
       mockExistsSync.mockReturnValue(false);
 
-      updateMainAppEntitlements("/apple", {
-        productName: "TestApp",
-        identifier: "com.example.test",
-        version: "1.0.0",
-        bundleIdPrefix: "com.example",
-      });
+      updateMainAppEntitlements(
+        "/apple",
+        {
+          productName: "TestApp",
+          identifier: "com.example.test",
+          version: "1.0.0",
+          bundleIdPrefix: "com.example",
+        },
+        "ios",
+      );
 
       expect(mockWriteFileSync).toHaveBeenCalledWith(
         "/apple/TestApp_iOS/TestApp_iOS.entitlements",
+        expect.stringContaining("group.com.example.test"),
+      );
+    });
+
+    it("creates new entitlements file if not exists (macOS)", () => {
+      const mockExistsSync = vi.mocked(fs.existsSync);
+      const mockWriteFileSync = vi.mocked(fs.writeFileSync);
+
+      mockExistsSync.mockReturnValue(false);
+
+      updateMainAppEntitlements(
+        "/apple",
+        {
+          productName: "TestApp",
+          identifier: "com.example.test",
+          version: "1.0.0",
+          bundleIdPrefix: "com.example",
+        },
+        "macos",
+      );
+
+      expect(mockWriteFileSync).toHaveBeenCalledWith(
+        "/apple/TestApp_macOS/TestApp_macOS.entitlements",
         expect.stringContaining("group.com.example.test"),
       );
     });
@@ -128,12 +155,16 @@ describe("entitlements", () => {
       mockExistsSync.mockReturnValue(true);
       mockReadFileSync.mockReturnValue(EMPTY_ENTITLEMENTS);
 
-      updateMainAppEntitlements("/apple", {
-        productName: "TestApp",
-        identifier: "com.example.test",
-        version: "1.0.0",
-        bundleIdPrefix: "com.example",
-      });
+      updateMainAppEntitlements(
+        "/apple",
+        {
+          productName: "TestApp",
+          identifier: "com.example.test",
+          version: "1.0.0",
+          bundleIdPrefix: "com.example",
+        },
+        "ios",
+      );
 
       expect(mockReadFileSync).toHaveBeenCalledWith(
         "/apple/TestApp_iOS/TestApp_iOS.entitlements",

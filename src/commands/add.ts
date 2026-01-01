@@ -24,6 +24,8 @@ function resolveTemplatesDir(
   options: AddOptions,
   extensionType: string,
 ): string {
+  const { platform } = options;
+
   // Option 1: Explicit templates path
   if (options.templates) {
     const templatesPath = path.resolve(process.cwd(), options.templates);
@@ -38,7 +40,12 @@ function resolveTemplatesDir(
     const pluginPath = resolvePluginPath(options.plugin);
     const pluginPkg = JSON.parse(
       fs.readFileSync(path.join(pluginPath, "package.json"), "utf8"),
-    ) as { "tauri-apple-extension"?: { type: string; templates: string } };
+    ) as {
+      "tauri-apple-extension"?: {
+        type: string;
+        templates: { ios?: string; macos?: string };
+      };
+    };
 
     const extensionConfig = pluginPkg["tauri-apple-extension"];
     if (!extensionConfig) {
@@ -53,18 +60,30 @@ function resolveTemplatesDir(
       );
     }
 
-    const templatesPath = path.join(pluginPath, extensionConfig.templates);
+    const platformTemplates = extensionConfig.templates[platform];
+    if (!platformTemplates) {
+      throw new Error(
+        `Plugin ${options.plugin} does not support ${platform} platform`,
+      );
+    }
+
+    const templatesPath = path.join(pluginPath, platformTemplates);
     if (!fs.existsSync(templatesPath)) {
       throw new Error(`Plugin templates directory not found: ${templatesPath}`);
     }
     return templatesPath;
   }
 
-  // Option 3: Default templates (from bundled dist/cli.js -> ../templates)
-  const defaultTemplates = path.join(__dirname, "../templates", extensionType);
+  // Option 3: Default templates (from bundled dist/cli.js -> ../templates/{platform}/{type})
+  const defaultTemplates = path.join(
+    __dirname,
+    "../templates",
+    platform,
+    extensionType,
+  );
   if (!fs.existsSync(defaultTemplates)) {
     throw new Error(
-      `No templates found. Use --plugin or --templates to specify templates.`,
+      `No templates found for ${platform}/${extensionType}. Use --plugin or --templates to specify templates.`,
     );
   }
   return defaultTemplates;
@@ -92,7 +111,9 @@ export async function addExtension(
   type: string,
   options: AddOptions,
 ): Promise<void> {
-  console.log(`\nTauri Apple Extensions - Add ${type}\n`);
+  const { platform } = options;
+  const platformDisplay = platform === "ios" ? "iOS" : "macOS";
+  console.log(`\nTauri Apple Extensions - Add ${type} (${platformDisplay})\n`);
 
   try {
     // Validate extension type
@@ -109,7 +130,7 @@ export async function addExtension(
     console.log(`Project root: ${projectRoot}`);
 
     const tauriConfig = findTauriConfig(projectRoot);
-    const appleDir = findAppleProjectDir(projectRoot);
+    const appleDir = findAppleProjectDir(projectRoot, platform);
     console.log(`Apple project dir: ${appleDir}`);
 
     // Get app info
@@ -135,14 +156,14 @@ export async function addExtension(
 
     // Run extension setup
     console.log(`\n1. Creating ${extension.displayName} files...`);
-    extension.createFiles(appleDir, appInfo, templatesDir);
+    extension.createFiles(appleDir, appInfo, templatesDir, platform);
 
     console.log(`\n2. Updating main app entitlements...`);
-    updateMainAppEntitlements(appleDir, appInfo);
+    updateMainAppEntitlements(appleDir, appInfo, platform);
 
     console.log(`\n3. Updating project.yml (extension target + URL scheme)...`);
     projectYml = readProjectYml(appleDir);
-    projectYml = extension.updateProjectYml(projectYml, appInfo);
+    projectYml = extension.updateProjectYml(projectYml, appInfo, platform);
     writeProjectYml(appleDir, projectYml);
 
     console.log(`\n4. Regenerating Xcode project...`);

@@ -33,19 +33,42 @@ describe("share extension", () => {
   });
 
   describe("updateProjectYml", () => {
-    it("adds share extension target", () => {
+    it("adds share extension target (iOS)", () => {
       const projectYml = `name: TestApp
 targets:
   TestApp_iOS:
     type: application
     dependencies: []`;
 
-      const result = shareExtension.updateProjectYml(projectYml, mockAppInfo);
+      const result = shareExtension.updateProjectYml(
+        projectYml,
+        mockAppInfo,
+        "ios",
+      );
 
       expect(result).toContain("TestApp-ShareExtension:");
       expect(result).toContain("type: app-extension");
       expect(result).toContain("platform: iOS");
       expect(result).toContain("com.example.testapp.ShareExtension");
+    });
+
+    it("adds share extension target (macOS)", () => {
+      const projectYml = `name: TestApp
+targets:
+  TestApp_macOS:
+    type: application
+    dependencies: []`;
+
+      const result = shareExtension.updateProjectYml(
+        projectYml,
+        mockAppInfo,
+        "macos",
+      );
+
+      expect(result).toContain("TestApp-ShareExtension:");
+      expect(result).toContain("type: app-extension");
+      expect(result).toContain("platform: macOS");
+      expect(result).toContain('deploymentTarget: "11.0"');
     });
 
     it("adds dependency to main target", () => {
@@ -55,7 +78,11 @@ targets:
     type: application
     dependencies: []`;
 
-      const result = shareExtension.updateProjectYml(projectYml, mockAppInfo);
+      const result = shareExtension.updateProjectYml(
+        projectYml,
+        mockAppInfo,
+        "ios",
+      );
 
       expect(result).toContain("target: TestApp-ShareExtension");
       expect(result).toContain("embed: true");
@@ -72,23 +99,47 @@ targets:
         CFBundleDisplayName: TestApp
     dependencies: []`;
 
-      const result = shareExtension.updateProjectYml(projectYml, mockAppInfo);
+      const result = shareExtension.updateProjectYml(
+        projectYml,
+        mockAppInfo,
+        "ios",
+      );
 
       expect(result).toContain("CFBundleURLTypes:");
       expect(result).toContain("CFBundleURLSchemes:");
       expect(result).toContain("- testapp");
     });
 
-    it("sets correct deployment target", () => {
+    it("sets correct deployment target for iOS", () => {
       const projectYml = `name: TestApp
 targets:
   TestApp_iOS:
     type: application
     dependencies: []`;
 
-      const result = shareExtension.updateProjectYml(projectYml, mockAppInfo);
+      const result = shareExtension.updateProjectYml(
+        projectYml,
+        mockAppInfo,
+        "ios",
+      );
 
       expect(result).toContain('deploymentTarget: "14.0"');
+    });
+
+    it("sets correct deployment target for macOS", () => {
+      const projectYml = `name: TestApp
+targets:
+  TestApp_macOS:
+    type: application
+    dependencies: []`;
+
+      const result = shareExtension.updateProjectYml(
+        projectYml,
+        mockAppInfo,
+        "macos",
+      );
+
+      expect(result).toContain('deploymentTarget: "11.0"');
     });
 
     it("configures correct entitlements path", () => {
@@ -98,7 +149,11 @@ targets:
     type: application
     dependencies: []`;
 
-      const result = shareExtension.updateProjectYml(projectYml, mockAppInfo);
+      const result = shareExtension.updateProjectYml(
+        projectYml,
+        mockAppInfo,
+        "ios",
+      );
 
       expect(result).toContain(
         "CODE_SIGN_ENTITLEMENTS: ShareExtension/ShareExtension.entitlements",
@@ -126,6 +181,7 @@ targets:
       const result = shareExtension.updateProjectYml(
         projectYml,
         appInfoWithSpecialChars,
+        "ios",
       );
 
       expect(result).toContain("- mytestapp123");
@@ -138,7 +194,11 @@ targets:
     type: application
     dependencies: []`;
 
-      const result = shareExtension.updateProjectYml(projectYml, mockAppInfo);
+      const result = shareExtension.updateProjectYml(
+        projectYml,
+        mockAppInfo,
+        "ios",
+      );
 
       expect(result).toContain('CFBundleShortVersionString: "1.0.0"');
       expect(result).toContain('CFBundleVersion: "1.0.0"');
@@ -165,7 +225,7 @@ targets:
         return false;
       });
 
-      shareExtension.createFiles("/apple", mockAppInfo, "/templates");
+      shareExtension.createFiles("/apple", mockAppInfo, "/templates", "ios");
 
       expect(mockMkdirSync).toHaveBeenCalledWith("/apple/ShareExtension", {
         recursive: true,
@@ -183,7 +243,7 @@ targets:
 
       mockExistsSync.mockReturnValue(true);
 
-      shareExtension.createFiles("/apple", mockAppInfo, "/templates");
+      shareExtension.createFiles("/apple", mockAppInfo, "/templates", "ios");
 
       expect(mockMkdirSync).not.toHaveBeenCalled();
     });
@@ -194,7 +254,7 @@ targets:
 
       mockExistsSync.mockReturnValue(true);
 
-      shareExtension.createFiles("/apple", mockAppInfo, "/templates");
+      shareExtension.createFiles("/apple", mockAppInfo, "/templates", "ios");
 
       expect(mockCopyTemplateFile).toHaveBeenCalledWith(
         "/templates/ShareViewController.swift",
@@ -218,7 +278,7 @@ targets:
       });
 
       expect(() =>
-        shareExtension.createFiles("/apple", mockAppInfo, "/templates"),
+        shareExtension.createFiles("/apple", mockAppInfo, "/templates", "ios"),
       ).toThrow("Template not found: /templates/ShareViewController.swift");
     });
 
@@ -232,7 +292,7 @@ targets:
         return true;
       });
 
-      shareExtension.createFiles("/apple", mockAppInfo, "/templates");
+      shareExtension.createFiles("/apple", mockAppInfo, "/templates", "ios");
 
       expect(mockCopyTemplateFile).toHaveBeenCalledWith(
         "/templates/Info.plist",
@@ -252,7 +312,7 @@ targets:
         return true;
       });
 
-      shareExtension.createFiles("/apple", mockAppInfo, "/templates");
+      shareExtension.createFiles("/apple", mockAppInfo, "/templates", "ios");
 
       expect(mockCopyTemplateFile).toHaveBeenCalledWith(
         "/templates/ShareExtension-Info.plist",
@@ -271,7 +331,7 @@ targets:
         return true;
       });
 
-      shareExtension.createFiles("/apple", mockAppInfo, "/templates");
+      shareExtension.createFiles("/apple", mockAppInfo, "/templates", "ios");
 
       expect(mockWriteFileSync).toHaveBeenCalledWith(
         "/apple/ShareExtension/Info.plist",
@@ -287,7 +347,7 @@ targets:
 
       mockExistsSync.mockReturnValue(true);
 
-      shareExtension.createFiles("/apple", mockAppInfo, "/templates");
+      shareExtension.createFiles("/apple", mockAppInfo, "/templates", "ios");
 
       expect(mockCreateExtensionEntitlements).toHaveBeenCalledWith(
         "/apple/ShareExtension",
@@ -312,6 +372,7 @@ targets:
         "/apple",
         appInfoWithSpecialChars,
         "/templates",
+        "ios",
       );
 
       expect(mockCopyTemplateFile).toHaveBeenCalledWith(

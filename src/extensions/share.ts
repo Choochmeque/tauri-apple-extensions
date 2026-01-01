@@ -7,7 +7,7 @@ import {
 } from "../core/project-yml.js";
 import { createExtensionEntitlements } from "../core/entitlements.js";
 import { copyTemplateFile } from "../utils/template.js";
-import type { AppInfo, Extension } from "../types.js";
+import type { AppInfo, Extension, Platform } from "../types.js";
 
 export const shareExtension: Extension = {
   type: "share",
@@ -19,7 +19,12 @@ export const shareExtension: Extension = {
     return `${appInfo.productName}-ShareExtension`;
   },
 
-  createFiles(appleDir: string, appInfo: AppInfo, templatesDir: string): void {
+  createFiles(
+    appleDir: string,
+    appInfo: AppInfo,
+    templatesDir: string,
+    _platform: Platform,
+  ): void {
     const extensionDir = path.join(appleDir, "ShareExtension");
     const appGroupId = `group.${appInfo.identifier}`;
     const urlScheme = appInfo.productName
@@ -127,17 +132,24 @@ export const shareExtension: Extension = {
     console.log(`Created ShareExtension files in ${extensionDir}`);
   },
 
-  updateProjectYml(projectYml: string, appInfo: AppInfo): string {
+  updateProjectYml(
+    projectYml: string,
+    appInfo: AppInfo,
+    platform: Platform,
+  ): string {
     const extensionName = this.extensionName(appInfo);
     const extensionBundleId = `${appInfo.identifier}.ShareExtension`;
-    const targetName = `${appInfo.productName}_iOS`;
+    const platformSuffix = platform === "ios" ? "iOS" : "macOS";
+    const platformValue = platform === "ios" ? "iOS" : "macOS";
+    const deploymentTarget = platform === "ios" ? "14.0" : "11.0";
+    const targetName = `${appInfo.productName}_${platformSuffix}`;
 
     // Create the extension target YAML
     const extensionTarget = `
   ${extensionName}:
     type: app-extension
-    platform: iOS
-    deploymentTarget: "14.0"
+    platform: ${platformValue}
+    deploymentTarget: "${deploymentTarget}"
     sources:
       - path: ShareExtension
     info:
