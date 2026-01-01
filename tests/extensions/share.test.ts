@@ -142,6 +142,40 @@ targets:
       expect(result).toContain('deploymentTarget: "11.0"');
     });
 
+    it("adds CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION for macOS", () => {
+      const projectYml = `name: TestApp
+targets:
+  TestApp_macOS:
+    type: application
+    dependencies: []`;
+
+      const result = shareExtension.updateProjectYml(
+        projectYml,
+        mockAppInfo,
+        "macos",
+      );
+
+      expect(result).toContain(
+        "CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION: YES",
+      );
+    });
+
+    it("does not add CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION for iOS", () => {
+      const projectYml = `name: TestApp
+targets:
+  TestApp_iOS:
+    type: application
+    dependencies: []`;
+
+      const result = shareExtension.updateProjectYml(
+        projectYml,
+        mockAppInfo,
+        "ios",
+      );
+
+      expect(result).not.toContain("CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION");
+    });
+
     it("configures correct entitlements path", () => {
       const projectYml = `name: TestApp
 targets:

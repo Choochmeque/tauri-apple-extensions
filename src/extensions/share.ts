@@ -172,7 +172,7 @@ export const shareExtension: Extension = {
       base:
         PRODUCT_BUNDLE_IDENTIFIER: ${extensionBundleId}
         SKIP_INSTALL: YES
-        CODE_SIGN_ENTITLEMENTS: ShareExtension/ShareExtension.entitlements
+        CODE_SIGN_ENTITLEMENTS: ShareExtension/ShareExtension.entitlements${platform === "macos" ? "\n        CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION: YES" : ""}
 `;
 
     // Add the target
