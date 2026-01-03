@@ -1,14 +1,17 @@
-declare const __VERSION__: string;
+import { createRequire } from "module";
 import { Command } from "commander";
 import { addExtension } from "./commands/add.js";
 import type { Platform } from "./types.js";
+
+const require = createRequire(import.meta.url);
+const { version } = require("../package.json");
 
 const program = new Command();
 
 program
   .name("tauri-apple-extensions")
   .description("Add Apple extensions to Tauri apps")
-  .version(__VERSION__);
+  .version(version);
 
 function createPlatformCommand(platform: Platform): Command {
   const cmd = new Command(platform);
